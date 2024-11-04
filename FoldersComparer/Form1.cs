@@ -1,3 +1,5 @@
+using System;
+using System.Security.Cryptography;
 using System.Windows.Forms;
 
 namespace FoldersComparer
@@ -9,7 +11,7 @@ namespace FoldersComparer
         private string patternFilterOne = "*.*";
         private string patternFilterTwo = "*.*";
 
-        
+
 
         public Form1()
         {
@@ -46,15 +48,24 @@ namespace FoldersComparer
             maxFilesSizeToolStripMenuItem.DropDownItems.Insert(2, checkBoxHost);
 
 
-            //numericUpDown.ValueChanged += new EventHandler(OnNumUpDownValueChanged);
+            numericUpDown.ValueChanged += new EventHandler(OnNumUpDownValueChanged);
 
         }
 
         private void OnNumUpDownValueChanged(object sender, EventArgs e)
         {
-            if (numericUpDown.Value > 21000)
+            //if (numericUpDown.Value > 21000)
+            //{
+            //    MessageBox.Show("Program isn't tested for files bigger than 10 gigabytes, program may take a long time or crash");
+            //}
+
+            if (numericUpDown.Value == 0)
             {
-                MessageBox.Show("Program isn't tested for files bigger than 10 gigabytes, program may take a long time or crash");
+                rememberSize.Visible = true;
+            }
+            else
+            {
+                rememberSize.Visible = false;
             }
         }
 
@@ -118,9 +129,38 @@ namespace FoldersComparer
 
         }
 
-        private void buttonAnalyze_Click(object sender, EventArgs e)
+        private async void buttonAnalyze_Click(object sender, EventArgs e) //avoiding crashes and softlocks
         {
-            if(numericUpDown.Value == 0)
+            buttonAnalyze.Enabled = false;
+            buttonAnalyze.Text = "PLEASE WAIT";
+            progressBar1.Visible = true;
+            progressBar1.Value = 0;
+            folderOneCount.Visible = true;
+            folderTwoCount.Visible = true;
+
+            try
+            {
+                await Task.Run(() => CompareFolders());
+            }
+            finally
+            {
+                buttonAnalyze.Enabled = true;
+                buttonAnalyze.Text = "COMPARE";
+                //folderOneCount.Text = String.Empty;
+                //folderTwoCount.Text = String.Empty;
+                // progressBar1.Visible = false;
+                progressBar1.Visible = false;
+
+                folderOneCount.Visible = false;
+                folderTwoCount.Visible = false;
+            }
+
+
+        }
+
+        private void CompareFolders()
+        {
+            if (numericUpDown.Value == 0)
             {
                 MessageBox.Show("Set the Max file size to consider first (In Options)");
                 return;
@@ -133,6 +173,8 @@ namespace FoldersComparer
 
             string logFileContent = String.Empty;
 
+            
+
             if (Directory.Exists(folderOnePath) && Directory.Exists(folderTwoPath) && Directory.Exists(folderLogPath))
             {
                 MessageBox.Show("Starting comparation between folders....");
@@ -140,10 +182,32 @@ namespace FoldersComparer
                 string[] filesFolderOne = Directory.GetFiles(folderOnePath, patternFilterOne, SearchOption.AllDirectories); //search all files in that path, with all extensions, in all directories
                 string[] filesFolderTwo = Directory.GetFiles(folderTwoPath, patternFilterTwo, SearchOption.AllDirectories); //search all files in that path, with all extensions, in all directories
 
+                //folderOneCount.Text = "Folder one files count: " + Convert.ToString(filesFolderOne.Length);
+                //folderTwoCount.Text = "Folder two files count: " + Convert.ToString(filesFolderTwo.Length);
+
+
+                this.Invoke((Action)(() =>
+                {
+                    folderOneCount.Text = "Folder one files count: " + filesFolderOne.Length;
+                    folderTwoCount.Text = "Folder two files count: " + filesFolderTwo.Length;
+                }));
+
+                int totalComparisons = filesFolderOne.Length * filesFolderTwo.Length;
+                this.Invoke((Action)(() => progressBar1.Maximum = totalComparisons));
+                int barProgress = 0;
+
+                int barUpdateInterval = totalComparisons / 30 ;
+
                 HashSet<string> checkedFilesPaths = new HashSet<string>(); //store the files paths that were already matched
 
                 for (int i = 0; i < filesFolderOne.Length; i++)
                 {
+                    barProgress++;
+
+                    if (barProgress % barUpdateInterval == 0)
+                    {
+                        this.Invoke((Action)(() => progressBar1.Value = barProgress));
+                    }
 
                     FileInfo fileInfoOne = new FileInfo(filesFolderOne[i]);
                     if (fileInfoOne.Length > numericUpDown.Value * 1024 * 1024) //  in bytes
@@ -152,10 +216,20 @@ namespace FoldersComparer
                     }
 
                     //byte[] fileDataOne = File.ReadAllBytes(filesFolderOne[i]);
-                    byte[] fileDataOne = ReadLargeFile(filesFolderOne[i]);
+                    //byte[] fileDataOne = ReadLargeFile(filesFolderOne[i]);
+                    string fileOneHash = CalculateSHA256(filesFolderOne[i]);
 
                     for (int j = 0; j < filesFolderTwo.Length; j++)
                     {
+
+                        barProgress++;
+
+                        if (barProgress % barUpdateInterval == 0)
+                        {
+                            this.Invoke((Action)(() => progressBar1.Value = barProgress));
+                        }
+
+
                         FileInfo fileInfoTwo = new FileInfo(filesFolderTwo[j]);
                         if (fileInfoTwo.Length > numericUpDown.Value * 1024 * 1024) //  in bytes
                         {
@@ -169,13 +243,24 @@ namespace FoldersComparer
 
                         if (fileInfoOne.Length != fileInfoTwo.Length)
                         {
-                            continue; // Salta il confronto se le dimensioni non corrispondono
+                            continue; // skip if file sizes are different
+                        }
+
+                        if (fileInfoOne.Length == 0 || fileInfoTwo.Length == 0)
+                        {
+                            // Gestisci i file vuoti come necessario
+                            continue; // Salta o gestisci i file vuoti
                         }
 
                         //byte[] fileDataTwo = File.ReadAllBytes(filesFolderTwo[j]);
-                        byte[] fileDataTwo = ReadLargeFile(filesFolderTwo[j]);
+                        //byte[] fileDataTwo = ReadLargeFile(filesFolderTwo[j]);
 
-                        if (fileDataOne.SequenceEqual(fileDataTwo))
+                        
+
+                        string fileTwoHash = CalculateSHA256(filesFolderTwo[j]);
+
+
+                        if (fileOneHash == fileTwoHash)
                         {
                             if (!checkBoxLog.Checked)
                             {
@@ -240,31 +325,37 @@ namespace FoldersComparer
                 }
 
             }
+        }
 
-
-
-
-
-
+        private string CalculateSHA256(string filePath)
+        {
+            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read)) //file path, open file to acess content, read style
+            {
+                using (SHA256 sha256 = SHA256.Create())
+                {
+                    byte[] hashBytes = sha256.ComputeHash(fileStream); //example: contains 0x5A,0x3B etc etc
+                    return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant(); //convert to byte (readable chars)
+                }
+            }
         }
 
 
         public static byte[] ReadLargeFile(string filePath)
-    {
-        using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
         {
-            byte[] buffer = new byte[8192]; // Buffer di 8 KB
-            using (MemoryStream memoryStream = new MemoryStream())
+            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
-                int bytesRead;
-                while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) > 0)
+                byte[] buffer = new byte[8192]; // Buffer di 8 KB
+                using (MemoryStream memoryStream = new MemoryStream())
                 {
-                    memoryStream.Write(buffer, 0, bytesRead);
+                    int bytesRead;
+                    while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        memoryStream.Write(buffer, 0, bytesRead);
+                    }
+                    return memoryStream.ToArray();
                 }
-                return memoryStream.ToArray();
             }
         }
-    }
 
         private void buttonSwap_Click(object sender, EventArgs e)
         {
@@ -275,10 +366,10 @@ namespace FoldersComparer
 
         private void whatDoesItDoToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            
+
             MessageBox.Show("This program compares all the files in two user specified folders.\n" +
                 "You need to set the max size of the files to consider.\n" +
-                "The comparison is between file bytes , and the matches are written to a log file in a user specified path.\n","How the program works");
+                "The comparison is between file bytes , and the matches are written to a log file in a user specified path.\n", "How the program works");
         }
 
         private void kbToolStripMenuItem_Click(object sender, EventArgs e)
@@ -370,14 +461,19 @@ namespace FoldersComparer
 
         private void maxFilesSizeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(numericUpDown.Value == 0)
+            if (numericUpDown.Value == 0)
             {
                 rememberSize.Visible = true;
             }
             else
             {
-                rememberSize.Visible = false; 
+                rememberSize.Visible = false;
             }
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
         }
     }
 

@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             label1 = new Label();
             label2 = new Label();
@@ -63,6 +64,10 @@
             label9 = new Label();
             enableFilterOne = new CheckBox();
             enableFilterTwo = new CheckBox();
+            folderOneCount = new Label();
+            folderTwoCount = new Label();
+            progressBar1 = new ProgressBar();
+            timer1 = new System.Windows.Forms.Timer(components);
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -89,7 +94,7 @@
             buttonAnalyze.Enabled = false;
             buttonAnalyze.Location = new Point(29, 222);
             buttonAnalyze.Name = "buttonAnalyze";
-            buttonAnalyze.Size = new Size(180, 43);
+            buttonAnalyze.Size = new Size(180, 41);
             buttonAnalyze.TabIndex = 2;
             buttonAnalyze.Text = "COMPARE";
             buttonAnalyze.UseVisualStyleBackColor = true;
@@ -368,11 +373,38 @@
             enableFilterTwo.UseVisualStyleBackColor = true;
             enableFilterTwo.CheckedChanged += enableFilterTwo_CheckedChanged;
             // 
+            // folderOneCount
+            // 
+            folderOneCount.AutoSize = true;
+            folderOneCount.Location = new Point(215, 222);
+            folderOneCount.Name = "folderOneCount";
+            folderOneCount.Size = new Size(0, 15);
+            folderOneCount.TabIndex = 27;
+            // 
+            // folderTwoCount
+            // 
+            folderTwoCount.AutoSize = true;
+            folderTwoCount.Location = new Point(408, 222);
+            folderTwoCount.Name = "folderTwoCount";
+            folderTwoCount.Size = new Size(0, 15);
+            folderTwoCount.TabIndex = 28;
+            // 
+            // progressBar1
+            // 
+            progressBar1.Location = new Point(215, 240);
+            progressBar1.Name = "progressBar1";
+            progressBar1.Size = new Size(376, 23);
+            progressBar1.TabIndex = 29;
+            progressBar1.Visible = false;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(642, 277);
+            Controls.Add(progressBar1);
+            Controls.Add(folderTwoCount);
+            Controls.Add(folderOneCount);
             Controls.Add(enableFilterTwo);
             Controls.Add(enableFilterOne);
             Controls.Add(label9);
@@ -404,6 +436,7 @@
             MaximizeBox = false;
             Name = "Form1";
             Text = "Folders Comparator";
+            Load += Form1_Load;
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             ResumeLayout(false);
@@ -446,5 +479,9 @@
         private CheckBox enableFilterOne;
         private CheckBox enableFilterTwo;
         private ToolStripMenuItem rememberSize;
+        private Label folderOneCount;
+        private Label folderTwoCount;
+        private ProgressBar progressBar1;
+        private System.Windows.Forms.Timer timer1;
     }
 }
