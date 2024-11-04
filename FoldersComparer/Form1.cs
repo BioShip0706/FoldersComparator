@@ -4,10 +4,13 @@ namespace FoldersComparer
 {
     public partial class Form1 : Form
     {
-        private NumericUpDown numericUpDown;
+        NumericUpDown numericUpDown;
         private CheckBox checkBoxLog;
         private string patternFilterOne = "*.*";
         private string patternFilterTwo = "*.*";
+
+        
+
         public Form1()
         {
             InitializeComponent();
@@ -19,7 +22,7 @@ namespace FoldersComparer
 
             numericUpDown = new NumericUpDown();
             numericUpDown.Minimum = 0;
-            numericUpDown.Maximum = 21000;
+            numericUpDown.Maximum = ushort.MaxValue;
             numericUpDown.Value = 0;
 
             ToolStripControlHost numericUpDownHost = new ToolStripControlHost(numericUpDown);
@@ -42,7 +45,19 @@ namespace FoldersComparer
 
             maxFilesSizeToolStripMenuItem.DropDownItems.Insert(2, checkBoxHost);
 
+
+            //numericUpDown.ValueChanged += new EventHandler(OnNumUpDownValueChanged);
+
         }
+
+        private void OnNumUpDownValueChanged(object sender, EventArgs e)
+        {
+            if (numericUpDown.Value > 21000)
+            {
+                MessageBox.Show("Program isn't tested for files bigger than 10 gigabytes, program may take a long time or crash");
+            }
+        }
+
 
         private void browseOne_Click(object sender, EventArgs e)
         {
@@ -136,7 +151,8 @@ namespace FoldersComparer
                         continue; // Skip the file if larger than 10 MB
                     }
 
-                    byte[] fileDataOne = File.ReadAllBytes(filesFolderOne[i]);
+                    //byte[] fileDataOne = File.ReadAllBytes(filesFolderOne[i]);
+                    byte[] fileDataOne = ReadLargeFile(filesFolderOne[i]);
 
                     for (int j = 0; j < filesFolderTwo.Length; j++)
                     {
@@ -156,7 +172,8 @@ namespace FoldersComparer
                             continue; // Salta il confronto se le dimensioni non corrispondono
                         }
 
-                        byte[] fileDataTwo = File.ReadAllBytes(filesFolderTwo[j]);
+                        //byte[] fileDataTwo = File.ReadAllBytes(filesFolderTwo[j]);
+                        byte[] fileDataTwo = ReadLargeFile(filesFolderTwo[j]);
 
                         if (fileDataOne.SequenceEqual(fileDataTwo))
                         {
@@ -230,6 +247,24 @@ namespace FoldersComparer
 
 
         }
+
+
+        public static byte[] ReadLargeFile(string filePath)
+    {
+        using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+        {
+            byte[] buffer = new byte[8192]; // Buffer di 8 KB
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                int bytesRead;
+                while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    memoryStream.Write(buffer, 0, bytesRead);
+                }
+                return memoryStream.ToArray();
+            }
+        }
+    }
 
         private void buttonSwap_Click(object sender, EventArgs e)
         {
