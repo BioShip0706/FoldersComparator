@@ -6,7 +6,7 @@ namespace FoldersComparer
 {
     public partial class Form1 : Form
     {
-        NumericUpDown numericUpDown;
+        private NumericUpDown numericUpDown;
         private CheckBox checkBoxLog;
         private string patternFilterOne = "*.*";
         private string patternFilterTwo = "*.*";
@@ -177,7 +177,7 @@ namespace FoldersComparer
 
             if (Directory.Exists(folderOnePath) && Directory.Exists(folderTwoPath) && Directory.Exists(folderLogPath))
             {
-                MessageBox.Show("Starting comparation between folders....");
+                MessageBox.Show("Starting comparation between folders....\nIt may take few minutes, check the progress bar");
 
                 string[] filesFolderOne = Directory.GetFiles(folderOnePath, patternFilterOne, SearchOption.AllDirectories); //search all files in that path, with all extensions, in all directories
                 string[] filesFolderTwo = Directory.GetFiles(folderTwoPath, patternFilterTwo, SearchOption.AllDirectories); //search all files in that path, with all extensions, in all directories
@@ -282,7 +282,7 @@ namespace FoldersComparer
                 string folderOneName = Path.GetFileName(folderOnePath);
                 string folderTwoName = Path.GetFileName(folderTwoPath);
 
-                string logFileName = DateTime.Now.ToString("dd-MM-yy-HH-mm--ss") + "-" + folderOneName + "-" + folderTwoName + ".txt";
+                string logFileName = DateTime.Now.ToString("MM-dd-yy-HH--mm--ss") + "-" + folderOneName + "-" + folderTwoName + ".txt";
 
                 string logFilePath = Path.Combine(folderLogPath, logFileName);
 
@@ -340,22 +340,6 @@ namespace FoldersComparer
         }
 
 
-        public static byte[] ReadLargeFile(string filePath)
-        {
-            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-            {
-                byte[] buffer = new byte[8192]; // Buffer di 8 KB
-                using (MemoryStream memoryStream = new MemoryStream())
-                {
-                    int bytesRead;
-                    while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) > 0)
-                    {
-                        memoryStream.Write(buffer, 0, bytesRead);
-                    }
-                    return memoryStream.ToArray();
-                }
-            }
-        }
 
         private void buttonSwap_Click(object sender, EventArgs e)
         {
@@ -368,8 +352,8 @@ namespace FoldersComparer
         {
 
             MessageBox.Show("This program compares all the files in two user specified folders.\n" +
-                "You need to set the max size of the files to consider.\n" +
-                "The comparison is between file bytes , and the matches are written to a log file in a user specified path.\n", "How the program works");
+                "You need to set the max size of the files to consider. (In options)\n" +
+                "The comparison is between files hashes, and the matches are written to a log file in a user specified path.\n", "How the program works");
         }
 
         private void kbToolStripMenuItem_Click(object sender, EventArgs e)
