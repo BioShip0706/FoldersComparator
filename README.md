@@ -2,7 +2,7 @@ Program that compare all the files of two specified folders, comparison happens 
 ---
 
 ### How to Use:
-- Download from release
+- Download from [Release](https://github.com/BioShip0706/FoldersComparator/releases)
 - Set the max file size to consider (in Options)
 - Set the directories of the folders and where to save the comparison log
 - Start comparison, once it finishes, check the log (if there's at least 1 match found)
