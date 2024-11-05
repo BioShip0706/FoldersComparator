@@ -138,9 +138,11 @@ namespace FoldersComparer
             folderOneCount.Visible = true;
             folderTwoCount.Visible = true;
 
+            Action compareTwoFolders = () => CompareFolders();
+
             try
             {
-                await Task.Run(() => CompareFolders());
+                await Task.Run(compareTwoFolders);
             }
             finally
             {
@@ -155,7 +157,7 @@ namespace FoldersComparer
                 folderTwoCount.Visible = false;
             }
 
-
+         
         }
 
         private void CompareFolders()
@@ -182,18 +184,38 @@ namespace FoldersComparer
                 string[] filesFolderOne = Directory.GetFiles(folderOnePath, patternFilterOne, SearchOption.AllDirectories); //search all files in that path, with all extensions, in all directories
                 string[] filesFolderTwo = Directory.GetFiles(folderTwoPath, patternFilterTwo, SearchOption.AllDirectories); //search all files in that path, with all extensions, in all directories
 
-                //folderOneCount.Text = "Folder one files count: " + Convert.ToString(filesFolderOne.Length);
-                //folderTwoCount.Text = "Folder two files count: " + Convert.ToString(filesFolderTwo.Length);
 
 
-                this.Invoke((Action)(() =>
+                //declare Action
+                Action setFolderCount = () =>
                 {
                     folderOneCount.Text = "Folder one files count: " + filesFolderOne.Length;
                     folderTwoCount.Text = "Folder two files count: " + filesFolderTwo.Length;
-                }));
+                };
+
+                //pass action setFolderCount to Invoke()
+                this.Invoke(setFolderCount);
+
+
+                //Alternative way, without separately declaring an Action and Casting to action (More ambiguous)
+                //this.Invoke(() => 
+                //{
+                //    folderOneCount.Text = "Folder one files count: " + filesFolderOne.Length;
+                //    folderTwoCount.Text = "Folder two files count: " + filesFolderTwo.Length;
+                //});
+
+                //Alternative way, without separately declaring an Action but Casting to action (More stable, secure)
+                //this.Invoke((Action)(() =>
+                //{
+                //    folderOneCount.Text = "Folder one files count: " + filesFolderOne.Length;
+                //    folderTwoCount.Text = "Folder two files count: " + filesFolderTwo.Length;
+                //}));
+
+
 
                 int totalComparisons = filesFolderOne.Length * filesFolderTwo.Length;
                 this.Invoke((Action)(() => progressBar1.Maximum = totalComparisons));
+                
                 int barProgress = 0;
 
                 int barUpdateInterval = totalComparisons / 30 ;
